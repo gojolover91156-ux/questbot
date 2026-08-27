@@ -1,23 +1,16 @@
-const { Client, GatewayIntentBits, ActivityType } = require('discord.js');
-require('dotenv').config();
+const { ActivityType } = require('discord.js');
 
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds]
-});
-
-client.once('ready', () => {
-  console.log(`Logged in as ${client.user.tag}`);
-
+function setStatus(client) {
   client.user.setPresence({
     activities: [
       {
-        name: 'custom', // yeh field Custom type mein ignore hoti hai, sirf state dikhta hai
+        name: 'custom',
         type: ActivityType.Custom,
-        state: 'Serving 2 Karan' // <-- yahan apna text daalo, yehi dikhega bina "Playing/Watching" ke
+        state: 'Serving 2 Karan'
       }
     ],
-    status: 'idle' // online | idle | dnd | invisible
+    status: 'idle'
   });
-});
+}
 
-client.login(process.env.BOT_TOKEN);
+module.exports = { setStatus };
