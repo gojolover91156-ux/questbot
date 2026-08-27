@@ -1,15 +1,15 @@
-const { ActivityType } = require('discord.js');
-
-function setStatus(client) {
-  client.user.setPresence({
+async function setStatus(client) {
+  await client.updatePresence(0, {
+    since: null,
     activities: [
       {
-        name: 'custom',
-        type: ActivityType.Custom,
-        state: 'Serving 2 Karan'
+        name: "custom",
+        type: 4,
+        state: "Serving 2 Karan"
       }
     ],
-    status: 'idle'
+    status: "idle",
+    afk: false
   });
 }
 
