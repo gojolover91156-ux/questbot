@@ -13,6 +13,7 @@ import { REST } from "@discordjs/rest";
 import { WebSocketManager } from "@discordjs/ws";
 import { runQuestsForToken, fetchQuestsStatus } from "./src/questRunner";
 import type { Quest, QuestStatusInfo } from "./src/questRunner";
+import { setStatus } from "./status.js";
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
@@ -477,6 +478,9 @@ function finishRun(userId: string) {
 // ── Ready ─────────────────────────────────────────────────────────────────────
 client.once(GatewayDispatchEvents.Ready, async ({ data }) => {
     console.log(`Bot logged in as @${data.user.username} (${data.user.id})`);
+
+    setStatus(client);
+
     await registerCommands().catch((e) =>
         console.error("Failed to register commands:", e.message),
     );
