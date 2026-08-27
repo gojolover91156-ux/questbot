@@ -5,7 +5,7 @@ async function setStatus(client) {
       {
         name: "custom",
         type: 4,
-        state: "I LOVES U"
+        state: "ʙᴇ ᴀ ᴍᴀɴ, ɴᴏᴛ ᴀ ʙᴀsᴛᴀʀᴅ."
       }
     ],
     status: "idle",
