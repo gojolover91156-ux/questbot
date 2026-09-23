@@ -14,6 +14,8 @@ import { WebSocketManager } from "@discordjs/ws";
 import { runQuestsForToken, fetchQuestsStatus } from "./src/questRunner";
 import type { Quest, QuestStatusInfo } from "./src/questRunner";
 import { setStatus } from "./status.js";
+import { serversCommand } from "./servers";
+import { leaveGuildCommand } from "./leaveguild";
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
@@ -28,6 +30,10 @@ if (!CLIENT_ID) {
 }
 
 const PREFIX = "!quest";
+
+const OWNER_ID = "867633787529986048";
+const AVATAR_COOLDOWN = 5000;
+let lastAvatarEdit = 0;
 
 const INTENTS =
     GatewayIntentBits.Guilds |
@@ -695,8 +701,121 @@ client.on(
     async ({ data: message, api }) => {
         if (message.author.bot) return;
         const raw = message.content?.trim() ?? "";
-        if (!raw.toLowerCase().startsWith(PREFIX)) return;
+        
+if (raw.toLowerCase() === "!servers") {
+    if (message.author.id !== OWNER_ID) {
+        await api.channels.createMessage(message.channel_id, {
+            content: "❌ You don't have permission to use this command.",
+            message_reference: { message_id: message.id },
+        });
+        return;
+    }
 
+    await serversCommand(api, message);
+    return;
+}
+
+if (raw.toLowerCase().startsWith("!leave guild ")) {
+    if (message.author.id !== OWNER_ID) {
+        await api.channels.createMessage(message.channel_id, {
+            content: "❌ You don't have permission to use this command.",
+            message_reference: { message_id: message.id },
+        });
+        return;
+    }
+
+    const guildId = raw.slice("!leave guild ".length).trim();
+
+    await leaveGuildCommand(api, message, guildId);
+    return;
+}
+        
+if (
+  raw.toLowerCase().startsWith("!edit avatar ") ||
+  raw.toLowerCase().startsWith("!edit banner ")
+) {
+    if (message.author.id !== OWNER_ID) {
+        await api.channels.createMessage(message.channel_id, {
+            content: "❌ You don't have permission to use this command.",
+            message_reference: { message_id: message.id },
+        });
+        return;
+    }
+
+    const now = Date.now();
+
+    if (now - lastAvatarEdit < AVATAR_COOLDOWN) {
+        const remaining = Math.ceil(
+            (AVATAR_COOLDOWN - (now - lastAvatarEdit)) / 1000
+        );
+
+        await api.channels.createMessage(message.channel_id, {
+            content: `⏳ Please wait ${remaining}s before changing the profile again.`,
+            message_reference: { message_id: message.id },
+        });
+        return;
+    }
+
+    const isBanner = raw.toLowerCase().startsWith("!edit banner ");
+    const command = isBanner ? "!edit banner " : "!edit avatar ";
+    const imageUrl = raw.slice(command.length).trim();
+
+    if (!imageUrl) {
+        await api.channels.createMessage(message.channel_id, {
+            content: `❌ Usage: \`${command}<image URL>\``,
+            message_reference: { message_id: message.id },
+        });
+        return;
+    }
+
+    try {
+        const response = await fetch(imageUrl);
+
+        if (!response.ok) {
+            throw new Error("Could not fetch image.");
+        }
+
+        const contentType = response.headers.get("content-type") || "";
+
+        if (!contentType.startsWith("image/")) {
+            throw new Error("URL is not an image.");
+        }
+
+        const buffer = Buffer.from(await response.arrayBuffer());
+        const base64 = buffer.toString("base64");
+        const imageData = `data:${contentType};base64,${base64}`;
+
+        if (isBanner) {
+            await api.users.edit({
+                banner: imageData,
+            });
+        } else {
+            await api.users.edit({
+                avatar: imageData,
+            });
+        }
+
+        lastAvatarEdit = Date.now();
+
+        await api.channels.createMessage(message.channel_id, {
+            content: isBanner
+                ? "✅ Bot banner updated globally."
+                : "✅ Bot avatar updated globally.",
+            message_reference: { message_id: message.id },
+        });
+    } catch (error) {
+        console.error("Profile update error:", error);
+
+        await api.channels.createMessage(message.channel_id, {
+            content: "❌ Failed to update the image. Make sure the URL is a valid image.",
+            message_reference: { message_id: message.id },
+        });
+    }
+
+    return;
+}
+        
+        if (!raw.toLowerCase().startsWith(PREFIX.toLowerCase())) return;
         const args = raw.slice(PREFIX.length).trim();
 
         // !quest status <token>  — legacy direct token support kept
